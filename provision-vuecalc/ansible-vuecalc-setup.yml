@@ -1,0 +1,15 @@
+---
+- hosts: balancer
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+  gather_facts: true
+
+  tasks:
+  - name: copy dist build
+    copy:
+      src: /home/vagrant/AGISIT-Capstone-Project/vuecalc/dist
+      dest: /home/
+      mode: '0775'
+      owner: root
+      group: root
