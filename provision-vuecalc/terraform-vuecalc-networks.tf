@@ -1,3 +1,4 @@
+
 # Elemets of the cloud such as virtual servers,
 # networks, firewall rules are created as resources
 # syntax is: resource RESOURCE_TYPE RESOURCE_NAME

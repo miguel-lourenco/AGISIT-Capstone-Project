@@ -68,7 +68,7 @@ function postToBootStorage(num1, num2, operation, result){
   
   console.log("Sending create operation request to Spring Boot service 'bootstorage'. Data = ", JSON.stringify(data));
   request({
-      url: "http://bootstorage-svc:5000/api/bootstorage/create",
+      url: "http://192.168.56.69:5000/api/bootstorage/create",
       method: "POST",
       json: true,
       body: data

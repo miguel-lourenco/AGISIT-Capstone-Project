@@ -4,9 +4,8 @@
 # syntax is: resource RESOURCE_TYPE RESOURCE_NAME
 # https://www.terraform.io/docs/configuration/resources.html
 
-###########  Load Balancer   #############
-resource "google_compute_instance" "balancer" {
-    name = "balancer"
+resource "google_compute_instance" "happy" {
+    name = "happy"
     machine_type = var.GCP_MACHINE_TYPE
     zone = var.GCP_ZONE
 
@@ -27,6 +26,5 @@ resource "google_compute_instance" "balancer" {
     metadata = {
       ssh-keys = "ubuntu:${file("/home/vagrant/.ssh/id_rsa.pub")}"
     }
-
-  tags = ["balancer"]
+  tags = ["happy"]
 }

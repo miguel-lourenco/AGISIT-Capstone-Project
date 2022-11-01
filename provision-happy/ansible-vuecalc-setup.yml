@@ -1,0 +1,28 @@
+---
+- hosts: happy
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+  gather_facts: true
+
+  tasks:
+  - name: create happy directory
+    command:
+      cmd: "mkdir /home/happy"
+
+  - name: copy happy js
+    copy:
+      src: /home/vagrant/happy/index.js
+      dest: /home/happy/
+      mode: '0755'
+      owner: root
+      group: root
+
+  - name: copy happy package.json
+    copy:
+      src: /home/vagrant/happy/package.json
+      dest: /home/happy/
+      mode: '0755'
+      owner: root
+      group: root 
+

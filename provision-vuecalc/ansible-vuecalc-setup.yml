@@ -8,7 +8,7 @@
   tasks:
   - name: copy dist build
     copy:
-      src: /home/vagrant/AGISIT-Capstone-Project/vuecalc/dist
+      src: /home/vagrant/vuecalc/dist
       dest: /home/
       mode: '0775'
       owner: root
