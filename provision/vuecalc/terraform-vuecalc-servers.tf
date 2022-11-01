@@ -1,14 +1,16 @@
+variable "machine_type" {
+    type = string
+}
 
-# Elemets of the cloud such as virtual servers,
-# networks, firewall rules are created as resources
-# syntax is: resource RESOURCE_TYPE RESOURCE_NAME
-# https://www.terraform.io/docs/configuration/resources.html
+variable "zone" {
+    type = string
+}
 
 ###########  Load Balancer   #############
 resource "google_compute_instance" "balancer" {
     name = "balancer"
-    machine_type = var.GCP_MACHINE_TYPE
-    zone = var.GCP_ZONE
+    machine_type = var.machine_type
+    zone = var.zone
 
     boot_disk {
         initialize_params {

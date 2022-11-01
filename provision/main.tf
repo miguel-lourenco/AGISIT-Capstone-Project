@@ -21,17 +21,34 @@ variable "disk_size" {
 # The module in folder 'vuecalc' defines the frontend service
 module "vuecalc" {
   source   = "./vuecalc"
-  project = var.project_id
-  machine = var.machine_type
+  machine_type = var.machine_type
   zone = var.zone
-  disk = var.disk_size
 }
 
-# The module in folder 'happy' defines the web server service
+# The module in folder 'happy' defines Hapi service
 module "happy" {
   source   = "./happy"
-  project = var.project_id
-  machine = var.machine_type
+  machine_type = var.machine_type
   zone = var.zone
-  disk = var.disk_size
+}
+
+# The module in folder 'expressed' defines Express service
+module "expressed" {
+  source   = "./expressed"
+  machine_type = var.machine_type
+  zone = var.zone
+}
+
+# The module in folder 'bootstorage' defines Spring boot service
+module "bootstorage" {
+  source   = "./bootstorage"
+  machine_type = var.machine_type
+  zone = var.zone
+}
+
+# The module in folder 'redis' defines the redis service
+module "redis" {
+  source   = "./redis"
+  machine_type = var.machine_type
+  zone = var.zone
 }
