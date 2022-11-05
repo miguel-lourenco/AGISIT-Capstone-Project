@@ -1,0 +1,382 @@
+---
+- hosts: targets
+  # as the systems are not yet "known" by Ansible Facts cannot be gathered yet
+  gather_facts: no
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+
+  pre_tasks:
+    # To operate remotely in critical files without direct user input
+    - name: Remove require tty - alt
+      lineinfile:
+        regexp: "requiretty"
+        dest: /etc/sudoers.d/os_defaults
+        state: absent
+    # Giving permissions in sudoers for system critical files (see https://docs.ansible.com/ansible/latest/modules/lineinfile_module.html)
+    - name: Validate the sudoers file before saving  not to require password
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: '^%ADMIN ALL='
+        line: '%ADMIN ALL=(ALL) NOPASSWD: ALL'
+        validate: /usr/sbin/visudo -cf %s
+    # Install the SSH key on servers
+    - name: install ssh key
+      authorized_key:
+        user: ubuntu
+        key: "{{ lookup('file', '/home/vagrant/.ssh/id_rsa.pub') }}"
+        state: present
+
+- hosts: bootstorage
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+  gather_facts: true
+
+  tasks:
+  # as there is no internal DNS service, we need to populate theb /etc/hosts
+  - name: update /etc/hosts file for name resolution of self
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "127.0.0.1 {{item}}"
+      state: present
+    with_items: bootstorage
+
+  - name: install jdk
+    apt:
+      pkg: openjdk-11-jre-headless
+      state: present
+
+  - name: copy jar
+    copy:
+      src: /home/vagrant/bootstorage/target/bootstorage-0.0.1-SNAPSHOT.jar
+      dest: /home/
+      mode: '0755'
+      owner: root
+      group: root
+
+  - name: start bootstorage
+    command:
+      chdir: /home/
+      cmd: java -jar bootstorage-0.0.1-SNAPSHOT.jar
+    async: 1000
+    poll: 0
+
+- hosts: expressed
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+  gather_facts: true
+
+  tasks:
+  # as there is no internal DNS service, we need to populate theb /etc/hosts
+  - name: update /etc/hosts file for name resolution of self
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "127.0.0.1 {{item}}"
+      state: present
+    with_items: expressed
+  # as there is no internal DNS service, we need to populate the /etc/hosts
+  - name: update /etc/hosts file for name resolution
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "{{ hostvars[item]['ansible_default_ipv4']['address'] }} {{item}}"
+      state: present
+    when: hostvars[item]['ansible_default_ipv4']['address'] is defined
+    with_items: '{{groups.storage}}'
+
+  - name: update repo
+    shell:
+      cmd: curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+
+  - name: install nodejs
+    apt:
+      pkg: nodejs
+      state: present
+
+  - name: create expressed directory
+    file:
+      path: /home/expressed
+      state: directory
+
+  - name: copy index.js
+    copy:
+      src: /home/vagrant/expressed/index.js
+      dest: /home/expressed/
+      mode: '0755'
+      owner: root
+      group: root
+
+  - name: copy package.json
+    copy:
+      src: /home/vagrant/expressed/package.json
+      dest: /home/expressed/
+      mode: '0755'
+      owner: root
+      group: root
+
+  - name: install dependencies
+    npm:
+      path: /home/expressed
+
+  - name: start expressed
+    command:
+      chdir: /home/expressed
+      cmd: node index.js
+    async: 1000
+    poll: 0
+
+- hosts: happy
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+  gather_facts: true
+
+  tasks:
+  # as there is no internal DNS service, we need to populate theb /etc/hosts
+  - name: update /etc/hosts file for name resolution of self
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "127.0.0.1 {{item}}"
+      state: present
+    with_items: happy
+  # as there is no internal DNS service, we need to populate the /etc/hosts
+  - name: update /etc/hosts file for name resolution
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "{{ hostvars[item]['ansible_default_ipv4']['address'] }} {{item}}"
+      state: present
+    when: hostvars[item]['ansible_default_ipv4']['address'] is defined
+    with_items: '{{groups.storage}}'
+
+  - name: update repo
+    shell:
+      cmd: curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+
+  - name: install nodejs
+    apt:
+      pkg: nodejs
+      state: present
+
+  - name: create happy directory
+    file:
+      path: /home/happy
+      state: directory
+
+  - name: copy happy js
+    copy:
+      src: /home/vagrant/happy/index.js
+      dest: /home/happy/
+      mode: '0755'
+      owner: root
+      group: root
+
+  - name: copy happy package.json
+    copy:
+      src: /home/vagrant/happy/package.json
+      dest: /home/happy/
+      mode: '0755'
+      owner: root
+      group: root
+
+  - name: install dependencies
+    npm:
+      path: /home/happy
+
+  - name: start happy
+    command:
+      chdir: /home/happy
+      cmd: node index.js
+    async: 1000
+    poll: 0
+
+- hosts: lb-happy
+  gather_facts: true
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+
+  tasks:
+  # as there is no internal DNS service, we need to populate theb /etc/hosts
+  - name: update /etc/hosts file for name resolution of self
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "127.0.0.1 {{item}}"
+      state: present
+    with_items: lb-happy
+  # as there is no internal DNS service, we need to populate the /etc/hosts
+  - name: update /etc/hosts file for name resolution
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "{{ hostvars[item]['ansible_default_ipv4']['address'] }} {{item}}"
+      state: present
+    when: hostvars[item]['ansible_default_ipv4']['address'] is defined
+    with_items: '{{groups.happy}}'
+
+  - name: add HAPROXY Repository
+    apt_repository:
+      repo: ppa:vbernat/haproxy-2.1
+      update_cache: true
+
+  - name: install haproxy and socat
+    apt:
+      pkg: ['haproxy', 'socat']
+      state: latest
+
+  - name: enable haproxy
+    lineinfile:
+      path: /etc/default/haproxy
+      regexp: "^ENABLED.+$"
+      line: "ENABLED=1"
+      state: present
+
+
+  - name: deploy haproxy config
+    template:
+      src: /home/vagrant/provision/lb-happy/haproxy.cfg.j2
+      dest: /etc/haproxy/haproxy.cfg
+      mode: 0644
+      validate: haproxy -f %s -c -q
+    notify: restart haproxy
+
+  - name: Ensure HAProxy is started and enabled on boot.
+    service:
+      name: haproxy
+      state: started
+      enabled: yes
+
+# The handler is common to the nginx installation steps
+  handlers:
+
+  - name: restart haproxy
+    service:
+      name: haproxy
+      state: restarted
+
+- hosts: lb-expressed
+  gather_facts: true
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+
+  tasks:
+  # as there is no internal DNS service, we need to populate theb /etc/hosts
+  - name: update /etc/hosts file for name resolution of self
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "127.0.0.1 {{item}}"
+      state: present
+    with_items: lb-expressed
+  # as there is no internal DNS service, we need to populate the /etc/hosts
+  - name: update /etc/hosts file for name resolution
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "{{ hostvars[item]['ansible_default_ipv4']['address'] }} {{item}}"
+      state: present
+    when: hostvars[item]['ansible_default_ipv4']['address'] is defined
+    with_items: '{{groups.expressed}}'
+
+  - name: add HAPROXY Repository
+    apt_repository:
+      repo: ppa:vbernat/haproxy-2.1
+      update_cache: true
+
+  - name: install haproxy and socat
+    apt:
+      pkg: ['haproxy', 'socat']
+      state: latest
+
+  - name: enable haproxy
+    lineinfile:
+      path: /etc/default/haproxy
+      regexp: "^ENABLED.+$"
+      line: "ENABLED=1"
+      state: present
+
+
+  - name: deploy haproxy config
+    template:
+      src: /home/vagrant/provision/lb-expressed/haproxy.cfg.j2
+      dest: /etc/haproxy/haproxy.cfg
+      mode: 0644
+      validate: haproxy -f %s -c -q
+    notify: restart haproxy
+
+  - name: Ensure HAProxy is started and enabled on boot.
+    service:
+      name: haproxy
+      state: started
+      enabled: yes
+
+# The handler is common to the nginx installation steps
+  handlers:
+
+  - name: restart haproxy
+    service:
+      name: haproxy
+      state: restarted
+
+- hosts: vuecalc
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+  gather_facts: true
+
+  tasks:
+  # as there is no internal DNS service, we need to populate theb /etc/hosts
+  - name: update /etc/hosts file for name resolution of self
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "127.0.0.1 {{item}}"
+      state: present
+    with_items: vuecalc
+  # as there is no internal DNS service, we need to populate the /etc/hosts
+  - name: update /etc/hosts file for name resolution
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "{{ hostvars[item]['ansible_default_ipv4']['address'] }} {{item}}"
+      state: present
+    when: hostvars[item]['ansible_default_ipv4']['address'] is defined
+    with_items: '{{groups.balancers}}'
+
+  - name: Add NGINX Repository
+    apt_repository:
+      repo: ppa:nginx/stable
+      state: present
+
+  - name: install nginx
+    apt:
+      pkg: nginx
+      state: present
+
+  - name: write our /etc/nginx/sites-available/default
+    template:
+      src: /home/vagrant/provision/vuecalc/default
+      dest: /etc/nginx/sites-available/default
+    notify: restart nginx
+
+  - name: copy dist build
+    copy:
+      src: /home/vagrant/vuecalc/dist
+      dest: /home/
+      mode: '0775'
+      owner: root
+      group: root
+
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted

@@ -49,6 +49,19 @@ module "bootstorage" {
 # The module in folder 'redis' defines the redis service
 module "redis" {
   source   = "./redis"
+  location_id = var.zone
+}
+
+# The module in folder 'lb-happy' defines loadbalancer for happy requests
+module "lb-happy" {
+  source   = "./lb-happy"
+  machine_type = var.machine_type
+  zone = var.zone
+}
+
+# The module in folder 'lb-expressed' defines the loadbalancer for expressed requests
+module "lb-expressed" {
+  source   = "./lb-expressed"
   machine_type = var.machine_type
   zone = var.zone
 }

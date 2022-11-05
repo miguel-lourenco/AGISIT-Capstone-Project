@@ -7,8 +7,7 @@ variable "zone" {
 }
 
 resource "google_compute_instance" "happy" {
-    count = 2
-    name = "happy${count.index+1}"
+    name = "lb-happy"
     machine_type = var.machine_type
     zone = var.zone
 
@@ -29,5 +28,5 @@ resource "google_compute_instance" "happy" {
     metadata = {
       ssh-keys = "ubuntu:${file("/home/vagrant/.ssh/id_rsa.pub")}"
     }
-  tags = ["happy"]
+  tags = ["lb-happy"]
 }

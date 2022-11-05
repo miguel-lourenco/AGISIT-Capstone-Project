@@ -5,14 +5,14 @@
 # https://www.terraform.io/docs/configuration/resources.html
 
 resource "google_compute_firewall" "frontend_rules" {
-  name    = "frontend-vuecalc"
+  name    = "lb-happy"
   network = "default"
 
   allow {
     protocol = "tcp"
-    ports = ["80", "443"]
+    ports = ["4000"]
   }
 
   source_ranges = ["0.0.0.0/0"]
-  target_tags = ["vuecalc"]
+  target_tags = ["lb-happy"]
 }

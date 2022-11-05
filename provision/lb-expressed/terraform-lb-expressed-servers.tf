@@ -6,8 +6,8 @@ variable "zone" {
     type = string
 }
 
-resource "google_compute_instance" "redis" {
-    name = "redis"
+resource "google_compute_instance" "expressed" {
+    name = "lb-expressed"
     machine_type = var.machine_type
     zone = var.zone
 
@@ -28,6 +28,5 @@ resource "google_compute_instance" "redis" {
     metadata = {
       ssh-keys = "ubuntu:${file("/home/vagrant/.ssh/id_rsa.pub")}"
     }
-
-  tags = ["redis"]
+  tags = ["lb-expressed"]
 }

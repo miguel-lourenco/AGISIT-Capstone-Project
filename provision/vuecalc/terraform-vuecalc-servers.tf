@@ -6,9 +6,8 @@ variable "zone" {
     type = string
 }
 
-###########  Load Balancer   #############
-resource "google_compute_instance" "balancer" {
-    name = "balancer"
+resource "google_compute_instance" "vuecalc" {
+    name = "vuecalc"
     machine_type = var.machine_type
     zone = var.zone
 
@@ -30,5 +29,5 @@ resource "google_compute_instance" "balancer" {
       ssh-keys = "ubuntu:${file("/home/vagrant/.ssh/id_rsa.pub")}"
     }
 
-  tags = ["balancer"]
+  tags = ["vuecalc"]
 }

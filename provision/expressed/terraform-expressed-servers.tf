@@ -7,7 +7,8 @@ variable "zone" {
 }
 
 resource "google_compute_instance" "expressed" {
-    name = "expressed"
+    count = 2
+    name = "expressed${count.index+1}"
     machine_type = var.machine_type
     zone = var.zone
 

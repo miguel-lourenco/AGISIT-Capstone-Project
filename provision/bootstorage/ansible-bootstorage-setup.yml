@@ -1,0 +1,36 @@
+---
+- hosts: bootstorage
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+  gather_facts: true
+
+  tasks:
+  # as there is no internal DNS service, we need to populate theb /etc/hosts
+  - name: update /etc/hosts file for name resolution of self
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "127.0.0.1 {{item}}"
+      state: present
+    with_items: bootstorage
+
+  - name: install jdk
+    apt:
+      pkg: openjdk-11-jre-headless
+      state: present
+
+  - name: copy jar
+    copy:
+      src: /home/vagrant/bootstorage/target/bootstorage-0.0.1-SNAPSHOT.jar
+      dest: /home/
+      mode: '0755'
+      owner: root
+      group: root
+
+  - name: start bootstorage
+    command:
+      chdir: /home/
+      cmd: java -jar bootstorage-0.0.1-SNAPSHOT.jar
+    async: 1000
+    poll: 0

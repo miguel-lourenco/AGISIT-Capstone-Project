@@ -1,11 +1,45 @@
 ---
-- hosts: balancer
+- hosts: vuecalc
   remote_user: ubuntu
   become: yes
   become_method: sudo
   gather_facts: true
 
   tasks:
+  # as there is no internal DNS service, we need to populate theb /etc/hosts
+  - name: update /etc/hosts file for name resolution of self
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "127.0.0.1 {{item}}"
+      state: present
+    with_items: vuecalc
+  # as there is no internal DNS service, we need to populate the /etc/hosts
+  - name: update /etc/hosts file for name resolution
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "{{ hostvars[item]['ansible_default_ipv4']['address'] }} {{item}}"
+      state: present
+    when: hostvars[item]['ansible_default_ipv4']['address'] is defined
+    with_items: '{{groups.backend}}'
+
+  - name: Add NGINX Repository
+    apt_repository:
+      repo: ppa:nginx/stable
+      state: present
+
+  - name: install nginx
+    apt:
+      pkg: nginx
+      state: present
+
+  - name: write our /etc/nginx/sites-available/default
+    template:
+      src: /home/vagrant/provision/vuecalc/default
+      dest: /etc/nginx/sites-available/default
+    notify: restart nginx
+
   - name: copy dist build
     copy:
       src: /home/vagrant/vuecalc/dist
@@ -13,3 +47,9 @@
       mode: '0775'
       owner: root
       group: root
+
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
